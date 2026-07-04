@@ -28,6 +28,10 @@ class UserRepository extends BaseRepository {
   async findByRole(role, options = {}) {
     return this.paginate({ role }, options);
   }
+
+  async updateAvatar(userId, avatarData) {
+    return this.model.findByIdAndUpdate(userId, { avatarUrl: avatarData }, { new: true });
+  }
 }
 
 export default new UserRepository();

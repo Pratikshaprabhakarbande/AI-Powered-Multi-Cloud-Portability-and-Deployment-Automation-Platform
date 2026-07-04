@@ -5,6 +5,7 @@
  */
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
+import profileRoutes from './profile.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import terraformRoutes from './terraform.routes.js';
 import securityRoutes from './security.routes.js';
@@ -30,6 +31,7 @@ router.get('/health', (_req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/profile', profileRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/terraform', terraformRoutes);
 router.use('/security', securityRoutes);

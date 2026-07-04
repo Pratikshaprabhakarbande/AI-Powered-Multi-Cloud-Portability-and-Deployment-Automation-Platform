@@ -40,6 +40,7 @@ const userSchema = createSchema(
     },
     organization: { type: String, trim: true, default: 'Demo Org' },
     avatarUrl: { type: String, default: null },
+    emailVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date, default: null },
     preferences: {

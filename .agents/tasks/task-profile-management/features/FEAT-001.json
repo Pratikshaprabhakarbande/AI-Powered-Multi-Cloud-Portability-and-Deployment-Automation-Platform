@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Backend: Add dedicated profile routes with avatar upload (base64), email change, and enhanced password change endpoints. Creates a new profile routes file mounted at /api/profile with proper validation, plus extends the existing auth service to support email change with password verification and base64 avatar storage.",
+  "status": "in_progress",
+  "steps": [
+    "1. Update the User model in backend/src/models/user.model.js: (a) Rename 'avatarUrl' field to 'avatar' (type String, default null) to store base64 data URLs, (b) Add 'updatedAt' field - note: this already exists via timestamps:true in baseSchema.js createSchema, so no action needed, (c) Add 'emailVerified' field (type Boolean, default false). Keep 'avatarUrl' as well for backward compat or rename it - simplest is to just add 'avatar' as a new field and keep avatarUrl for URL-based avatars. Actually, per the user model the field is already 'avatarUrl' - we should repurpose it to store either a URL or a base64 data URL string. No schema change needed for that. Just add 'emailVerified: { type: Boolean, default: false }' to the user schema.",
+    "2. Update backend/src/repositories/UserRepository.js: Add an 'emailExists' method that accepts an excludeId parameter (it already does via the model static isEmailTaken) - confirm this works. Add a method 'updateAvatar(userId, avatarData)' that sets the avatarUrl field.",
+    "3. Update backend/src/services/auth.service.js: (a) Add a 'changeEmail(userId, { email, currentPassword })' function that verifies the current password, checks email is not taken (excluding the current user), updates the email, and returns the updated user. (b) Add an 'uploadAvatar(userId, base64Data)' function that validates the base64 string (must start with 'data:image/(jpeg|jpg|png|webp);base64,', total size must be under 5MB), stores it in avatarUrl field, returns updated user. (c) Add a 'changePassword(userId, { currentPassword, newPassword })' dedicated function (can reuse existing logic from updateProfile but as a standalone).",
+    "4. Update backend/src/controllers/auth.controller.js: Add new controller methods: (a) 'changeEmail' - calls authService.changeEmail with req.user.id and req.body, returns updated user. (b) 'uploadAvatar' - calls authService.uploadAvatar with req.user.id and req.body.avatar, returns updated user. (c) 'changePassword' - calls authService.changePassword (or reuse updateProfile logic).",
+    "5. Create backend/src/validations/profile.validation.js with validation chains: (a) updateProfileValidation - name (optional, 2-80 chars), organization (optional, max 120). (b) changeEmailValidation - email (required, valid email), currentPassword (required, string). (c) changePasswordValidation - currentPassword (required), newPassword (required, min 8, must have uppercase, lowercase, number, special char), confirmPassword (required, must exist). (d) uploadAvatarValidation - avatar (required, string, must be a data URL starting with data:image/).",
+    "6. Create backend/src/routes/profile.routes.js: Mount under /api/profile with authenticate middleware. Routes: GET / (getProfile), PUT / (updateProfile with name/org only), PUT /email (changeEmail), PUT /password (changePassword), POST /avatar (uploadAvatar). All use validate() middleware with appropriate validation chains.",
+    "7. Register the new profile routes in backend/src/routes/index.js: import profileRoutes and add router.use('/profile', profileRoutes).",
+    "8. Update the existing updateProfileValidation in backend/src/validations/auth.validation.js to allow avatarUrl to accept either a URL or a data URL (remove the .isURL() constraint or make it accept data: URIs). This ensures the existing PUT /api/auth/profile endpoint also works with base64 avatars."
+  ],
+  "acceptance_criteria": [
+    "A new file backend/src/routes/profile.routes.js exists with GET /, PUT /, PUT /email, PUT /password, POST /avatar routes",
+    "A new file backend/src/validations/profile.validation.js exists with proper express-validator chains",
+    "The profile routes are registered in backend/src/routes/index.js under '/profile'",
+    "The auth service has new methods: changeEmail, uploadAvatar, and changePassword",
+    "The auth controller has corresponding new handler methods",
+    "The User model has an emailVerified field added",
+    "The updateProfileValidation in auth.validation.js no longer requires avatarUrl to be a strict URL (allows data: URIs)",
+    "All new code follows ESM import style and existing patterns (asyncHandler, ApiError, sendSuccess)"
+  ],
+  "verification": [
+    "Read all created/modified files and verify they have valid JavaScript syntax and follow ESM patterns",
+    "Verify that imports and exports are consistent across the new files",
+    "Verify the route mounting in index.js is correct"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

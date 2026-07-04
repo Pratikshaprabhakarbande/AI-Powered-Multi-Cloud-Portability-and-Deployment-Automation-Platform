@@ -183,6 +183,118 @@ async function resetPassword({ token, password }) {
   return { reset: true };
 }
 
+/**
+ * Change email with current password verification.
+ * Revokes all tokens after email change for security.
+ */
+async function changeEmail(userId, { email, currentPassword }, context = {}) {
+  const user = await userRepository.findByEmail(
+    (await userRepository.findByIdOrFail(userId)).email,
+    { withPassword: true }
+  );
+
+  if (!currentPassword) throw ApiError.badRequest('currentPassword is required');
+
+  const match = await user.comparePassword(currentPassword);
+  if (!match) throw ApiError.badRequest('Current password is incorrect');
+
+  if (await userRepository.emailExists(email, userId)) {
+    throw ApiError.conflict('Email is already in use');
+  }
+
+  user.email = email;
+  user.emailVerified = false;
+  await user.save();
+
+  // Invalidate existing sessions after email change.
+  await tokenService.revokeAllUserTokens(user.id);
+
+  await auditLogRepository.record({
+    actor: user.id,
+    actorEmail: user.email,
+    actorRole: user.role,
+    action: AUDIT_ACTIONS.UPDATE,
+    entityType: 'User',
+    entityId: String(user.id),
+    description: 'Email changed',
+    ip: context.ip,
+    userAgent: context.userAgent
+  });
+
+  return user.toJSON();
+}
+
+/**
+ * Dedicated password change with current password verification.
+ * Revokes all tokens after password change for security.
+ */
+async function changePassword(userId, { currentPassword, newPassword }, context = {}) {
+  const user = await userRepository.findByEmail(
+    (await userRepository.findByIdOrFail(userId)).email,
+    { withPassword: true }
+  );
+
+  if (!currentPassword) throw ApiError.badRequest('currentPassword is required');
+
+  const match = await user.comparePassword(currentPassword);
+  if (!match) throw ApiError.badRequest('Current password is incorrect');
+
+  user.password = newPassword; // re-hashed by pre-save hook
+  await user.save();
+
+  // Invalidate existing sessions after password change.
+  await tokenService.revokeAllUserTokens(user.id);
+
+  await auditLogRepository.record({
+    actor: user.id,
+    actorEmail: user.email,
+    actorRole: user.role,
+    action: AUDIT_ACTIONS.UPDATE,
+    entityType: 'User',
+    entityId: String(user.id),
+    description: 'Password changed',
+    ip: context.ip,
+    userAgent: context.userAgent
+  });
+
+  return user.toJSON();
+}
+
+/**
+ * Upload avatar as base64 data URL.
+ * Validates the data URL format and size before storing.
+ */
+async function uploadAvatar(userId, base64Data, context = {}) {
+  // Validate data URL format
+  const dataUrlPattern = /^data:image\/(jpeg|jpg|png|webp);base64,/;
+  if (!dataUrlPattern.test(base64Data)) {
+    throw ApiError.badRequest('Avatar must be a base64 data URL with format: data:image/(jpeg|jpg|png|webp);base64,...');
+  }
+
+  // Validate size (5MB image = ~6.67MB base64 string)
+  const MAX_BASE64_LENGTH = 7 * 1024 * 1024; // ~7MB chars allows for ~5MB image
+  if (base64Data.length > MAX_BASE64_LENGTH) {
+    throw ApiError.badRequest('Avatar image exceeds maximum size of 5MB');
+  }
+
+  const user = await userRepository.updateAvatar(userId, base64Data);
+  if (!user) throw ApiError.notFound('User not found');
+
+  await auditLogRepository.record({
+    actor: user.id,
+    actorEmail: user.email,
+    actorRole: user.role,
+    action: AUDIT_ACTIONS.UPDATE,
+    entityType: 'User',
+    entityId: String(user.id),
+    description: 'Avatar updated',
+    ip: context.ip,
+    userAgent: context.userAgent
+  });
+
+  return user.toJSON();
+}
+
 export default {
   register,
   login,
@@ -190,6 +302,9 @@ export default {
   refreshTokens,
   getProfile,
   updateProfile,
+  changeEmail,
+  changePassword,
+  uploadAvatar,
   forgotPassword,
   resetPassword
 };
