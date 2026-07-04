@@ -7,7 +7,13 @@
  *
  * Safe by design: refuses to run with --fresh against a production NODE_ENV.
  */
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+// Load .env from the backend root (same logic as env.js).
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: resolve(__dirname, '../../.env') });
 import { connectDB, disconnectDB } from '../config/db.js';
 import logger from '../utils/logger.js';
 import env from '../config/env.js';
