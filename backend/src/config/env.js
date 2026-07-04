@@ -11,7 +11,22 @@ import { dirname, resolve } from 'node:path';
 // Load .env from the backend root directory (where package.json lives),
 // regardless of the current working directory when Node is started.
 const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: resolve(__dirname, '../../.env') });
+const envPath = resolve(__dirname, '../../.env');
+const dotenvResult = dotenv.config({ path: envPath });
+
+if (dotenvResult.error) {
+  console.warn(`[env] dotenv failed to load ${envPath}: ${dotenvResult.error.message}`);
+} else {
+  console.log(`[env] loaded ${envPath} (${Object.keys(dotenvResult.parsed || {}).length} vars)`);
+}
+
+// Debug: confirm MONGO_URI was loaded (redact password for safety).
+if (process.env.MONGO_URI) {
+  const display = process.env.MONGO_URI.replace(/:([^@]+)@/, ':***@');
+  console.log(`[env] MONGO_URI = ${display}`);
+} else {
+  console.warn('[env] MONGO_URI is NOT set — will fall back to localhost:27017');
+}
 
 const toBool = (v, fallback = false) =>
   v === undefined ? fallback : ['1', 'true', 'yes', 'on'].includes(String(v).toLowerCase());
