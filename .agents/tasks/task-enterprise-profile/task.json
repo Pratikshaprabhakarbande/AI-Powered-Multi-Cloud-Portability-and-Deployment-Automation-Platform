@@ -1,0 +1,7 @@
+{
+  "task_id": "task-enterprise-profile",
+  "task_description": "Upgrade Profile & Account Management into an enterprise-grade module with 2FA, active sessions, login activity, online presence, notification preferences, theme preferences, connected cloud accounts, security activity timeline, data export, account deletion, and a modern tabbed UI similar to GitHub Settings / AWS Console.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

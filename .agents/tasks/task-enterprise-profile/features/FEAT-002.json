@@ -1,0 +1,50 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Frontend: Complete enterprise Profile page overhaul with tabbed/sectioned layout (like GitHub Settings), all 16 feature sections implemented. Create a profile.service.js frontend service, update AuthContext, and build a multi-tab Profile page with: Profile Info (avatar, name, bio, phone, country, timezone, jobTitle, org), Email Management, Security (password change), 2FA, Login Activity, Active Sessions, Online Presence indicator, Notification Preferences, Theme Preferences, Connected Cloud Accounts, Security Activity Timeline, Download Data, Delete Account, plus enterprise UI elements (profile completion %, security score, verified badges, loading skeletons, animations).",
+  "status": "pending",
+  "steps": [
+    "1. Create frontend/src/services/profile.service.js: A dedicated service for all new /api/profile endpoints. Methods: updateExtendedProfile(payload), setup2FA(), verify2FA(token), disable2FA(password), getBackupCodes(), regenerateBackupCodes(), getActiveSessions(), revokeSession(id), revokeAllOtherSessions(), getLoginActivity(page,limit), getSecurityActivity(page,limit), updateNotificationPreferences(prefs), getConnectedAccounts(), connectCloudAccount(payload), disconnectCloudAccount(provider), exportProfileData(), deleteAccount(password). Each calls the appropriate api.get/post/put/delete and returns .data.data. Use the same api import from './api.js'.",
+    "2. REWRITE frontend/src/pages/Profile.jsx as a tabbed enterprise settings page. Structure: (a) Left sidebar navigation (vertical tabs on desktop, horizontal scrollable on mobile) with sections: Profile, Email, Security, Two-Factor Auth, Sessions, Login Activity, Notifications, Theme, Cloud Accounts, Security Activity, Data & Privacy. (b) Right content area that renders the active tab's content. (c) Top header area with: user avatar (large, using AvatarUpload), name, email, role badge, online status indicator (green dot), profile completion percentage bar, and security score badge. (d) Use useState for activeTab, default to 'profile'. (e) Use Tailwind responsive: on mobile, the sidebar becomes a horizontal scrolling tab bar at the top. On lg+, it's a fixed-width left column.",
+    "3. Implement the PROFILE tab content within Profile.jsx (or as inline section): Form with fields - Full Name, Organization, Bio (textarea, max 500), Phone, Country (text input), Time Zone (text input), Job Title. Pre-fill from user object. Save button calls profileService.updateExtendedProfile(), on success updates user via setUser. Show success/error toasts.",
+    "4. Implement the EMAIL tab: Keep existing email change form (email + currentPassword). Add email verification badge - show a green 'Verified' badge if user.emailVerified is true, else show amber 'Unverified' badge with a 'Send verification email' button (placeholder action with notify.info). The verified/unverified status displays prominently.",
+    "5. Implement the SECURITY tab: Keep existing password change form with strength indicator and match indicator. Add show/hide password toggle buttons (eye icon) for all 3 password fields. Use state to toggle input type between 'password' and 'text'.",
+    "6. Implement the TWO-FACTOR AUTH tab: (a) If 2FA not enabled: show explanation card, 'Enable 2FA' button. On click, call profileService.setup2FA(), display QR code image (from returned qrCodeUrl data URL), show secret key as text (for manual entry), show input for 6-digit verification code, 'Verify' button that calls profileService.verify2FA(token). On success show backup codes in a grid with 'Copy all' button and warning to save them. (b) If 2FA enabled: show green status badge '2FA Enabled', 'View backup codes' button (calls getBackupCodes), 'Regenerate backup codes' button, 'Disable 2FA' button (requires password confirmation modal). (c) Security warning cards explaining 2FA importance.",
+    "7. Implement the SESSIONS tab: (a) Call profileService.getActiveSessions() on tab mount. (b) Display list of sessions as cards showing: session ID (truncated), created date, expires date, 'Current session' badge for the active one. (c) Each non-current session has a 'Revoke' button. (d) 'Revoke all other sessions' button at top. (e) Use loading skeleton while fetching.",
+    "8. Implement the LOGIN ACTIVITY tab: (a) Call profileService.getLoginActivity(page, limit) on mount. (b) Display as a table/list: Date/Time, IP Address, Browser/Device (parsed from userAgent - simple extraction), Status (success/failed with colored badge). (c) Pagination controls (Previous/Next). (d) 'Last login' highlighted card at top showing most recent successful login.",
+    "9. Implement the NOTIFICATIONS tab: (a) Form with toggle switches for: Email Notifications, Security Alerts, Deployment Notifications, Monitoring Alerts, Marketing Emails. (b) Pre-fill from user.notificationPreferences (or user.preferences for backward compat). (c) Save button calls profileService.updateNotificationPreferences(). (d) Each toggle is a styled checkbox/switch using Tailwind.",
+    "10. Implement the THEME tab: (a) Three theme option cards: Light, Dark, System - each with icon and description. (b) Active theme highlighted with brand border/bg. (c) On click, call setTheme from useTheme (already works for light/dark/system). (d) Also persist to backend via updateProfile({preferences: {theme: value}}). (e) Show preview indicators.",
+    "11. Implement the CLOUD ACCOUNTS tab: (a) Call profileService.getConnectedAccounts() on mount. (b) Display 3 provider cards (AWS, Azure, GCP) with their logos/icons. (c) Each card shows: provider name, status badge (connected/disconnected), account ID, region, connected date. (d) If connected: show 'Disconnect' button. If disconnected: show 'Connect' button (opens a modal/form asking for accountId and region, then calls connectCloudAccount). (e) Use CloudProviderCard-like styling.",
+    "12. Implement the SECURITY ACTIVITY tab: (a) Call profileService.getSecurityActivity(page, limit) on mount. (b) Display as a timeline (vertical line with dots and cards). (c) Each entry: icon based on action type, description, timestamp, IP address. (d) Action type icon mapping: login=user icon, password changed=shield, email changed=mail icon, 2fa enabled=lock, etc. (e) Pagination.",
+    "13. Implement DATA & PRIVACY tab: (a) 'Download my data' section with button that calls profileService.exportProfileData() and triggers a JSON file download (create blob URL, click hidden anchor). (b) 'Delete Account' section with red danger zone card: warning text, 'Delete my account' button that opens a confirmation modal. Modal has: warning text, password input, 'I understand' checkbox, final 'Delete' button. On confirm calls profileService.deleteAccount(password), then logs out.",
+    "14. Add PROFILE COMPLETION percentage calculation as a useMemo: count filled fields (name, email, organization, bio, phone, country, timezone, jobTitle, avatarUrl) / total fields * 100. Display as a progress bar in the top header area.",
+    "15. Add SECURITY SCORE calculation as a useMemo: score starts at 0, +25 for password set (always true), +25 for 2FA enabled, +25 for email verified, +25 for having recent login (within 30 days). Display as a colored badge/meter (red <50, amber 50-75, green >75).",
+    "16. Add ONLINE PRESENCE indicator: In the profile header area, show a green dot with 'Online' text if user.lastSeenAt is within last 5 minutes (compare to Date.now()), otherwise grey dot with 'Offline'. This is calculated client-side from the user object.",
+    "17. Add loading skeletons (use existing Skeleton component from Loading.jsx) for each tab while data is being fetched. Add subtle fade-in transitions (Tailwind animate-fade-in class or transition-opacity) when tab content appears.",
+    "18. Add new icon paths to frontend/src/components/ui/Icon.jsx: 'key' (for 2FA), 'device' (for sessions), 'activity' (for timeline), 'download' (for export), 'trash' (for delete), 'eye' (for show password), 'eyeOff' (for hide password), 'mail' (for email), 'phone' (for phone field), 'globe' (for timezone/country), 'briefcase' (for job title), 'check-circle' (for verified). Use standard Heroicons stroke paths."
+  ],
+  "acceptance_criteria": [
+    "frontend/src/services/profile.service.js exists with all 17 API methods",
+    "Profile.jsx is a tabbed/sectioned layout with left sidebar navigation on desktop",
+    "All 11 tabs are implemented: Profile, Email, Security, 2FA, Sessions, Login Activity, Notifications, Theme, Cloud Accounts, Security Activity, Data & Privacy",
+    "The top header shows avatar, name, email, role badge, online presence dot, profile completion bar, and security score",
+    "2FA tab shows QR code setup flow when enabling and status when enabled",
+    "Sessions tab shows active sessions with revoke functionality",
+    "Login Activity shows paginated login history table",
+    "Delete Account has a multi-step confirmation flow with password",
+    "Data export triggers JSON file download",
+    "All forms use loading states (Spinner), success/error notifications (notify)",
+    "Password fields have show/hide toggle",
+    "Icon.jsx has all new icon paths added",
+    "Mobile responsive - tabs become horizontal scroll on small screens",
+    "Existing authService calls (avatar upload, email change, password change) still work"
+  ],
+  "verification": [
+    "Read all created/modified frontend files to verify valid JSX syntax",
+    "Verify imports reference existing modules correctly (useAuth, useNotification, useTheme, Spinner, Badge, etc.)",
+    "Verify Tailwind classes are standard utility classes",
+    "Verify the tabbed layout has responsive breakpoint handling"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

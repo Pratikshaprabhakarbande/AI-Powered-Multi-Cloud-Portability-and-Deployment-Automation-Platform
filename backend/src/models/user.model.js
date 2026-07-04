@@ -6,7 +6,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { createSchema } from './baseSchema.js';
-import { ROLES, ROLE_VALUES } from '../config/constants.js';
+import { ROLES, ROLE_VALUES, PROVIDER_VALUES } from '../config/constants.js';
 import env from '../config/env.js';
 
 const userSchema = createSchema(
@@ -49,6 +49,46 @@ const userSchema = createSchema(
       theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
       defaultProvider: { type: String, default: 'aws' },
       emailNotifications: { type: Boolean, default: true }
+    },
+
+    // ---- Extended profile fields ----
+    bio: { type: String, maxlength: 500, default: null },
+    phone: { type: String, default: null },
+    country: { type: String, default: null },
+    timezone: { type: String, default: null },
+    jobTitle: { type: String, default: null },
+
+    // ---- Two-Factor Authentication ----
+    twoFactorSecret: { type: String, private: true, default: null },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorBackupCodes: {
+      type: [{ code: { type: String }, used: { type: Boolean, default: false } }],
+      private: true,
+      default: []
+    },
+
+    // ---- Presence ----
+    lastSeenAt: { type: Date, default: null },
+
+    // ---- Notification Preferences ----
+    notificationPreferences: {
+      emailNotifications: { type: Boolean, default: true },
+      securityAlerts: { type: Boolean, default: true },
+      deploymentNotifications: { type: Boolean, default: true },
+      monitoringAlerts: { type: Boolean, default: true },
+      marketingEmails: { type: Boolean, default: false }
+    },
+
+    // ---- Connected Cloud Accounts ----
+    connectedAccounts: {
+      type: [{
+        provider: { type: String, enum: PROVIDER_VALUES, required: true },
+        accountId: { type: String, required: true },
+        region: { type: String },
+        connectedAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['connected', 'disconnected'], default: 'connected' }
+      }],
+      default: []
     }
   },
   { collection: 'users' },
