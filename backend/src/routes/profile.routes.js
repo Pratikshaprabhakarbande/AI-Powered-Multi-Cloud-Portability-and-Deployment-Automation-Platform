@@ -7,10 +7,10 @@
  *  PUT    /password      auth   change password
  *  POST   /avatar        auth   upload avatar (base64 data URL)
  *  PUT    /extended      auth   update extended profile fields
- *  POST   /2fa/setup     auth   setup two-factor authentication
+ *  POST   /2fa/setup     auth   setup two-factor authentication (rate limited)
  *  POST   /2fa/verify    auth   verify 2FA token and enable
  *  POST   /2fa/disable   auth   disable 2FA (rate limited)
- *  GET    /2fa/backup-codes        auth   get backup codes
+ *  POST   /2fa/backup-codes        auth   get backup codes (requires password)
  *  POST   /2fa/backup-codes/regenerate  auth   regenerate backup codes
  *  GET    /sessions      auth   get active sessions
  *  DELETE /sessions/:id  auth   revoke a specific session
@@ -79,8 +79,8 @@ router.post(
 // PUT /api/profile/extended - update extended profile fields
 router.put('/extended', validate(updateExtendedProfileValidation), profileController.updateExtendedProfile);
 
-// POST /api/profile/2fa/setup - setup two-factor authentication
-router.post('/2fa/setup', profileController.setup2FA);
+// POST /api/profile/2fa/setup - setup two-factor authentication (rate limited)
+router.post('/2fa/setup', authLimiter, profileController.setup2FA);
 
 // POST /api/profile/2fa/verify - verify 2FA token and enable
 router.post('/2fa/verify', validate(verify2FAValidation), profileController.verify2FA);
@@ -88,8 +88,8 @@ router.post('/2fa/verify', validate(verify2FAValidation), profileController.veri
 // POST /api/profile/2fa/disable - disable 2FA (rate limited)
 router.post('/2fa/disable', authLimiter, validate(disable2FAValidation), profileController.disable2FA);
 
-// GET /api/profile/2fa/backup-codes - get backup codes
-router.get('/2fa/backup-codes', profileController.getBackupCodes);
+// POST /api/profile/2fa/backup-codes - get backup codes (requires password re-authentication)
+router.post('/2fa/backup-codes', authLimiter, validate(disable2FAValidation), profileController.getBackupCodes);
 
 // POST /api/profile/2fa/backup-codes/regenerate - regenerate backup codes
 router.post('/2fa/backup-codes/regenerate', profileController.regenerateBackupCodes);

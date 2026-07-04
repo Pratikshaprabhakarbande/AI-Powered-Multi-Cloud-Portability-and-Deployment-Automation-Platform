@@ -19,8 +19,8 @@ const profileService = {
   disable2FA: (currentPassword) =>
     api.post('/profile/2fa/disable', { currentPassword }).then((r) => r.data.data),
 
-  getBackupCodes: () =>
-    api.get('/profile/2fa/backup-codes').then((r) => r.data.data.backupCodes),
+  getBackupCodes: (currentPassword) =>
+    api.post('/profile/2fa/backup-codes', { currentPassword }).then((r) => r.data.data.backupCodes),
 
   regenerateBackupCodes: () =>
     api.post('/profile/2fa/backup-codes/regenerate').then((r) => r.data.data.backupCodes),

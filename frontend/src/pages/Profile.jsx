@@ -273,6 +273,8 @@ function TwoFactorTab({ user, setUser, notify }) {
   const [backupCodes, setBackupCodes] = useState(null);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [disablePassword, setDisablePassword] = useState('');
+  const [showBackupCodesModal, setShowBackupCodesModal] = useState(false);
+  const [backupCodesPassword, setBackupCodesPassword] = useState('');
 
   const handleSetup = async () => {
     setLoading(true);
@@ -311,10 +313,13 @@ function TwoFactorTab({ user, setUser, notify }) {
   };
 
   const handleViewBackupCodes = async () => {
+    if (!backupCodesPassword) { notify.error('Password is required to view backup codes'); return; }
     setLoading(true);
     try {
-      const codes = await profileService.getBackupCodes();
+      const codes = await profileService.getBackupCodes(backupCodesPassword);
       setBackupCodes(codes);
+      setShowBackupCodesModal(false);
+      setBackupCodesPassword('');
     } catch (err) { notify.error(getErrorMessage(err)); }
     finally { setLoading(false); }
   };
@@ -349,7 +354,7 @@ function TwoFactorTab({ user, setUser, notify }) {
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">Your account is protected with two-factor authentication.</p>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={handleViewBackupCodes} className="btn-primary">{loading ? <Spinner size="sm" className="text-white" /> : 'View backup codes'}</button>
+            <button type="button" onClick={() => setShowBackupCodesModal(true)} className="btn-primary">{loading ? <Spinner size="sm" className="text-white" /> : 'View backup codes'}</button>
             <button type="button" onClick={handleRegenerateBackupCodes} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800">Regenerate codes</button>
             <button type="button" onClick={() => setShowDisableModal(true)} className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-950">Disable 2FA</button>
           </div>
@@ -404,6 +409,22 @@ function TwoFactorTab({ user, setUser, notify }) {
         </div>
       )}
 
+      {showBackupCodesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="card mx-4 w-full max-w-md space-y-4 p-6">
+            <h4 className="font-semibold text-slate-900 dark:text-white">View Backup Codes</h4>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Enter your password to view your backup recovery codes.</p>
+            <PasswordInput id="backup-codes-pwd" label="Current password" value={backupCodesPassword} onChange={(e) => setBackupCodesPassword(e.target.value)} disabled={loading} />
+            <div className="flex gap-3">
+              <button type="button" onClick={handleViewBackupCodes} disabled={loading || !backupCodesPassword} className="btn-primary">
+                {loading ? <Spinner size="sm" className="text-white" /> : 'View codes'}
+              </button>
+              <button type="button" onClick={() => { setShowBackupCodesModal(false); setBackupCodesPassword(''); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDisableModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="card mx-4 w-full max-w-md space-y-4 p-6">
@@ -432,7 +453,8 @@ function SessionsTab({ notify }) {
       .then(setSessions)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRevoke = async (id) => {
     try {
@@ -445,8 +467,8 @@ function SessionsTab({ notify }) {
   const handleRevokeAll = async () => {
     try {
       const result = await profileService.revokeAllOtherSessions();
-      setSessions((prev) => prev.filter((s) => s.current));
-      notify.success('All other sessions revoked (' + (result.revokedCount || 0) + ')');
+      setSessions([]);
+      notify.success('All sessions revoked (' + (result.revokedCount || 0) + '). Please log in again.');
     } catch (err) { notify.error(getErrorMessage(err)); }
   };
 
@@ -458,10 +480,13 @@ function SessionsTab({ notify }) {
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Active Sessions</h3>
         {sessions.length > 1 && (
           <button type="button" onClick={handleRevokeAll} className="text-sm text-red-600 hover:text-red-700 dark:text-red-400">
-            Revoke all other sessions
+            Revoke all sessions
           </button>
         )}
       </div>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Note: The current session cannot be identified. Revoking all sessions will require you to log in again.
+      </p>
       {sessions.length === 0 ? (
         <p className="text-sm text-slate-500">No active sessions found.</p>
       ) : (
@@ -473,18 +498,15 @@ function SessionsTab({ notify }) {
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-white">
                     Session {session.id?.slice(0, 8)}...
-                    {session.current && <Badge status="success" className="ml-2">Current</Badge>}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Created: {new Date(session.createdAt).toLocaleString()} | Expires: {new Date(session.expiresAt).toLocaleString()}
                   </p>
                 </div>
               </div>
-              {!session.current && (
-                <button type="button" onClick={() => handleRevoke(session.id)} className="text-sm text-red-600 hover:text-red-700 dark:text-red-400">
-                  Revoke
-                </button>
-              )}
+              <button type="button" onClick={() => handleRevoke(session.id)} className="text-sm text-red-600 hover:text-red-700 dark:text-red-400">
+                Revoke
+              </button>
             </div>
           ))}
         </div>
@@ -504,7 +526,8 @@ function LoginActivityTab({ notify }) {
       .then(setData)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [page, notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const parseUserAgent = (ua) => {
     if (!ua) return 'Unknown device';
@@ -676,7 +699,8 @@ function CloudAccountsTab({ notify }) {
       .then(setAccounts)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const providers = [
     { id: 'aws', name: 'Amazon Web Services', color: 'border-amber-400' },
@@ -762,7 +786,8 @@ function SecurityActivityTab({ notify }) {
       .then(setData)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [page, notify]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const getActionIcon = (action) => {
     if (action?.includes('login')) return 'user';

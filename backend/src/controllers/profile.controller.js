@@ -3,7 +3,6 @@
  * Handles enterprise profile operations: 2FA, sessions, activity,
  * notifications, cloud accounts, export, and account deletion.
  */
-import crypto from 'node:crypto';
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendSuccess } from '../utils/response.js';
 import profileService from '../services/profile.service.js';
@@ -35,7 +34,7 @@ export const disable2FA = asyncHandler(async (req, res) => {
 });
 
 export const getBackupCodes = asyncHandler(async (req, res) => {
-  const result = await profileService.getBackupCodes(req.user.id);
+  const result = await profileService.getBackupCodes(req.user.id, req.body);
   return sendSuccess(res, { message: 'Backup codes retrieved', data: result });
 });
 
@@ -55,18 +54,17 @@ export const revokeSession = asyncHandler(async (req, res) => {
 });
 
 export const revokeAllOtherSessions = asyncHandler(async (req, res) => {
-  // Hash the current token to identify the session to keep
-  const currentToken = req.token;
-  const currentTokenHash = currentToken
-    ? crypto.createHash('sha256').update(currentToken).digest('hex')
-    : null;
-
+  // Note: We cannot identify the "current" session because the Token model stores
+  // refresh token hashes, but we only have the access token (JWT) here. Revoking all
+  // sessions means the caller will also be logged out and must re-authenticate.
   const result = await profileService.revokeAllOtherSessions(
     req.user.id,
-    currentTokenHash,
     reqContext(req)
   );
-  return sendSuccess(res, { message: 'Other sessions revoked', data: result });
+  return sendSuccess(res, {
+    message: 'All sessions revoked. Please log in again.',
+    data: result
+  });
 });
 
 export const getLoginActivity = asyncHandler(async (req, res) => {

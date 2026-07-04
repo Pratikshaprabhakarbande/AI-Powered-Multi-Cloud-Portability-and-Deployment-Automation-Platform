@@ -209,11 +209,16 @@ async function disable2FA(userId, { currentPassword }, context = {}) {
 }
 
 /**
- * Get the user's backup codes.
+ * Get the user's backup codes (requires password re-authentication).
  */
-async function getBackupCodes(userId) {
-  const user = await User.findById(userId).select('+twoFactorBackupCodes');
+async function getBackupCodes(userId, { currentPassword }) {
+  const user = await User.findById(userId).select('+password +twoFactorBackupCodes');
   if (!user) throw ApiError.notFound('User not found');
+
+  const match = await user.comparePassword(currentPassword);
+  if (!match) {
+    throw ApiError.badRequest('Current password is incorrect');
+  }
 
   return { backupCodes: user.twoFactorBackupCodes || [] };
 }
@@ -250,6 +255,8 @@ async function regenerateBackupCodes(userId, context = {}) {
 
 /**
  * Get active sessions (non-blacklisted refresh tokens for the user).
+ * Note: Cannot determine which session is "current" because the access token (JWT)
+ * cannot be correlated back to a stored refresh token document.
  */
 async function getActiveSessions(userId) {
   const tokens = await Token.find({
@@ -261,8 +268,7 @@ async function getActiveSessions(userId) {
   return tokens.map((t) => ({
     id: t._id,
     createdAt: t.createdAt,
-    expiresAt: t.expiresAt,
-    current: false // controller will mark the current one
+    expiresAt: t.expiresAt
   }));
 }
 
@@ -294,18 +300,16 @@ async function revokeSession(userId, tokenId, context = {}) {
 }
 
 /**
- * Revoke all sessions except the current one.
+ * Revoke all sessions for the user.
+ * Note: Cannot exclude the "current" session because we only have the access token
+ * (JWT), but the Token model stores refresh token hashes. All sessions are revoked
+ * and the caller must re-authenticate.
  */
-async function revokeAllOtherSessions(userId, currentTokenHash, context = {}) {
+async function revokeAllOtherSessions(userId, context = {}) {
   const query = {
     user: userId,
     type: TOKEN_TYPES.REFRESH
   };
-
-  // If we have a current token hash, exclude it
-  if (currentTokenHash) {
-    query.tokenHash = { $ne: currentTokenHash };
-  }
 
   const result = await Token.deleteMany(query);
 
@@ -313,8 +317,8 @@ async function revokeAllOtherSessions(userId, currentTokenHash, context = {}) {
     actor: userId,
     action: AUDIT_ACTIONS.SESSION_REVOKED,
     entityType: 'Token',
-    entityId: 'all_other',
-    description: `Revoked ${result.deletedCount} other sessions`,
+    entityId: 'all',
+    description: `Revoked all ${result.deletedCount} sessions`,
     ip: context.ip,
     userAgent: context.userAgent
   });
@@ -526,6 +530,9 @@ async function deleteAccount(userId, { currentPassword }, context = {}) {
     throw ApiError.badRequest('Current password is incorrect');
   }
 
+  // Capture original email before anonymization for the audit log
+  const originalEmail = user.email;
+
   // Revoke all tokens
   await tokenService.revokeAllUserTokens(user.id);
 
@@ -536,7 +543,7 @@ async function deleteAccount(userId, { currentPassword }, context = {}) {
 
   await auditLogRepository.record({
     actor: user.id,
-    actorEmail: user.email,
+    actorEmail: originalEmail,
     actorRole: user.role,
     action: AUDIT_ACTIONS.DELETE,
     entityType: 'User',
