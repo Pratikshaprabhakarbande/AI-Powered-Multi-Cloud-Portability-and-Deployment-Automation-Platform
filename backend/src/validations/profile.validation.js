@@ -50,6 +50,8 @@ export const changePasswordValidation = [
     .isString()
     .notEmpty()
     .withMessage('Password confirmation is required')
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage('Password confirmation must match new password')
 ];
 
 export const uploadAvatarValidation = [

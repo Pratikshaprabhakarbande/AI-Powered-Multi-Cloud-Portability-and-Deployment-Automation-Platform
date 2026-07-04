@@ -263,6 +263,12 @@ async function changePassword(userId, { currentPassword, newPassword }, context 
 /**
  * Upload avatar as base64 data URL.
  * Validates the data URL format and size before storing.
+ *
+ * NOTE: Avatars are stored as base64 data URLs directly in the User document.
+ * This means every user.toJSON() response includes the full avatar payload (up
+ * to ~7 MB). This is a known trade-off chosen because the project does not use
+ * multer or external file storage. If response size becomes a concern, consider
+ * migrating to GridFS or object storage and serving avatars via a dedicated URL.
  */
 async function uploadAvatar(userId, base64Data, context = {}) {
   // Validate data URL format

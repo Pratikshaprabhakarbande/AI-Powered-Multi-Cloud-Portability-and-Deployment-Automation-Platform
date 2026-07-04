@@ -40,6 +40,8 @@ const userSchema = createSchema(
     },
     organization: { type: String, trim: true, default: 'Demo Org' },
     avatarUrl: { type: String, default: null },
+    // Placeholder for a future email verification flow. Currently set to false on
+    // email change but no verification mechanism exists yet to set it to true.
     emailVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date, default: null },

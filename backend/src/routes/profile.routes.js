@@ -12,6 +12,7 @@ import express from 'express';
 import authController from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import validate from '../middleware/validate.js';
+import { authLimiter } from '../middleware/rateLimit.js';
 import {
   updateProfileValidation,
   changeEmailValidation,
@@ -31,10 +32,10 @@ router.get('/', authController.getProfile);
 router.put('/', validate(updateProfileValidation), authController.updateProfile);
 
 // PUT /api/profile/email - change email with password verification
-router.put('/email', validate(changeEmailValidation), authController.changeEmail);
+router.put('/email', authLimiter, validate(changeEmailValidation), authController.changeEmail);
 
 // PUT /api/profile/password - change password
-router.put('/password', validate(changePasswordValidation), authController.changePassword);
+router.put('/password', authLimiter, validate(changePasswordValidation), authController.changePassword);
 
 // POST /api/profile/avatar - upload avatar (base64)
 // Use a higher body size limit for avatar uploads (10MB to accommodate base64-encoded images)

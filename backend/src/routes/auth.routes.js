@@ -36,6 +36,8 @@ router.post('/reset-password', authLimiter, validate(resetPasswordValidation), a
 
 router.post('/logout', authenticate, validate(logoutValidation), authController.logout);
 router.get('/profile', authenticate, authController.getProfile);
+// DEPRECATED: Use the dedicated /api/profile endpoints instead (PUT /api/profile,
+// PUT /api/profile/email, PUT /api/profile/password, POST /api/profile/avatar).
 router.put('/profile', authenticate, validate(updateProfileValidation), authController.updateProfile);
 
 export default router;

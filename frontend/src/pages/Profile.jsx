@@ -17,7 +17,7 @@ const PASSWORD_REQUIREMENTS = [
   { key: 'uppercase', label: 'One uppercase letter', test: (pw) => /[A-Z]/.test(pw) },
   { key: 'lowercase', label: 'One lowercase letter', test: (pw) => /[a-z]/.test(pw) },
   { key: 'number', label: 'One number', test: (pw) => /\d/.test(pw) },
-  { key: 'special', label: 'One special character', test: (pw) => /[!@#$%^&*(),.?":{}|<>[\]\\;'`~_+\-=/]/.test(pw) }
+  { key: 'special', label: 'One special character', test: (pw) => /[!@#$%^&*(),.?":{}|<>]/.test(pw) }
 ];
 
 function PasswordStrengthIndicator({ password }) {
