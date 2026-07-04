@@ -176,10 +176,49 @@ core modules have backend APIs, frontend UIs, tests, and documentation.
 | CI/CD — lint, tests, coverage, Docker, CodeQL, Trivy, Dependabot, GHCR deploy, Terraform | ✅ Done |
 | Production hardening — TLS (Nginx), CSRF, Redis cache, resource limits, healthchecks | ✅ Done |
 | Testing — 9 backend suites, 5 frontend, Playwright E2E scaffold, k6 load-test scaffold | ✅ Done |
+| Profile Management - avatar upload, email change, password change | ✅ Done |
 | Remaining (Deployments UI, Kubernetes UI, Monitoring UI, Admin UI) | 🟡 Nav placeholder |
 | Live cloud SDK validation against real accounts | 🟡 Code-complete; [runbook](docs/18-live-validation-runbook.md) provided |
 
 > See the [merge checklist](docs/19-merge-checklist.md) and the full module docs in `docs/`.
+
+---
+
+## Profile Management
+
+The platform includes a full-featured **Profile Management** module that allows authenticated users to manage their account details, upload avatars, change their email address, and update their password with strong security enforcement.
+
+### Avatar Upload
+
+- Supported formats: **JPG, JPEG, PNG, WEBP**
+- Maximum file size: **5 MB**
+- Storage: Base64-encoded and persisted directly in MongoDB
+- Display: Avatar is shown in the **navigation bar** and on the **profile page**
+
+### Email Change
+
+- Requires **current password verification** before the email can be updated
+- Validates proper email format
+- Enforces **uniqueness** (rejects email addresses already in use by another account)
+
+### Password Change
+
+- Enforces password complexity requirements:
+  - Minimum **8 characters**
+  - At least one **uppercase** letter
+  - At least one **lowercase** letter
+  - At least one **number**
+  - At least one **special character**
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/profile` | Retrieve the authenticated user's profile |
+| `PUT` | `/api/profile` | Update profile fields (display name, bio, etc.) |
+| `PUT` | `/api/profile/email` | Change email (requires current password) |
+| `PUT` | `/api/profile/password` | Change password (enforces complexity rules) |
+| `POST` | `/api/profile/avatar` | Upload or replace avatar image |
 
 ---
 
