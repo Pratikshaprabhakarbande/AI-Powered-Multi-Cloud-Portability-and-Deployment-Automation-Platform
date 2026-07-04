@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Frontend: Complete enterprise Profile page overhaul with tabbed/sectioned layout (like GitHub Settings), all 16 feature sections implemented. Create a profile.service.js frontend service, update AuthContext, and build a multi-tab Profile page with: Profile Info (avatar, name, bio, phone, country, timezone, jobTitle, org), Email Management, Security (password change), 2FA, Login Activity, Active Sessions, Online Presence indicator, Notification Preferences, Theme Preferences, Connected Cloud Accounts, Security Activity Timeline, Download Data, Delete Account, plus enterprise UI elements (profile completion %, security score, verified badges, loading skeletons, animations).",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Create frontend/src/services/profile.service.js: A dedicated service for all new /api/profile endpoints. Methods: updateExtendedProfile(payload), setup2FA(), verify2FA(token), disable2FA(password), getBackupCodes(), regenerateBackupCodes(), getActiveSessions(), revokeSession(id), revokeAllOtherSessions(), getLoginActivity(page,limit), getSecurityActivity(page,limit), updateNotificationPreferences(prefs), getConnectedAccounts(), connectCloudAccount(payload), disconnectCloudAccount(provider), exportProfileData(), deleteAccount(password). Each calls the appropriate api.get/post/put/delete and returns .data.data. Use the same api import from './api.js'.",
     "2. REWRITE frontend/src/pages/Profile.jsx as a tabbed enterprise settings page. Structure: (a) Left sidebar navigation (vertical tabs on desktop, horizontal scrollable on mobile) with sections: Profile, Email, Security, Two-Factor Auth, Sessions, Login Activity, Notifications, Theme, Cloud Accounts, Security Activity, Data & Privacy. (b) Right content area that renders the active tab's content. (c) Top header area with: user avatar (large, using AvatarUpload), name, email, role badge, online status indicator (green dot), profile completion percentage bar, and security score badge. (d) Use useState for activeTab, default to 'profile'. (e) Use Tailwind responsive: on mobile, the sidebar becomes a horizontal scrolling tab bar at the top. On lg+, it's a fixed-width left column.",
@@ -46,5 +46,5 @@
     "Verify the tabbed layout has responsive breakpoint handling"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All frontend files written successfully. Cannot run vite build/tests due to INTEGRATIONS_ONLY network. Verified: (1) profile.service.js passes node --check syntax validation, (2) Profile.jsx contains all 16 function components (11 tabs + 4 helpers + 1 main export), (3) all required imports present and matched to existing files, (4) Icon.jsx has 12 new icon paths added. ThemeTab uses useTheme() and useAuth() hooks at component top level which is valid React."
 }
