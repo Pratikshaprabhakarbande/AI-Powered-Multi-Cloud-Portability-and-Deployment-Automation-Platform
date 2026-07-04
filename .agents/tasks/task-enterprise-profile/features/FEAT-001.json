@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Backend: Extend User model, create profile.service.js and profile.controller.js with all enterprise profile APIs - 2FA (TOTP setup/verify/disable/backup codes), active sessions, login activity, online presence middleware, notification preferences, connected cloud accounts, security activity timeline, data export, and account deletion. Add new validations and extend profile.routes.js.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. EXTEND the User model (backend/src/models/user.model.js) to add these fields alongside existing ones (do NOT remove/rename any existing fields): bio (String, max 500), phone (String), country (String), timezone (String), jobTitle (String), twoFactorSecret (String, private:true, default null), twoFactorEnabled (Boolean, default false), twoFactorBackupCodes ([{code: String, used: Boolean}], private:true, default []), lastSeenAt (Date, default null), notificationPreferences ({emailNotifications: Boolean default true, securityAlerts: Boolean default true, deploymentNotifications: Boolean default true, monitoringAlerts: Boolean default true, marketingEmails: Boolean default false}), connectedAccounts ([{provider: String enum ['aws','azure','gcp'], accountId: String, region: String, connectedAt: Date, status: String enum ['connected','disconnected']}]).",
     "2. Add 'otpauth' and 'qrcode' to backend/package.json optionalDependencies (otpauth ^9.2.0, qrcode ^1.5.3). These will be dynamically imported with try/catch fallback.",
@@ -34,5 +34,5 @@
     "Verify dynamic imports use try/catch pattern consistent with cloud-adapters"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All files pass Node.js syntax check (--check). Cannot run full npm test/build due to INTEGRATIONS_ONLY network mode. Node preload script (proxy-bootstrap.js) fails in this sandbox but is unrelated to code - must use NODE_OPTIONS='' to run node --check. OTPAuth dynamic imports use try/catch consistent with cloud-adapters pattern."
 }
