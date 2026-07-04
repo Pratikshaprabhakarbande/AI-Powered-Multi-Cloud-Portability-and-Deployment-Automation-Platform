@@ -1,0 +1,20 @@
+{
+  "id": "FEAT-003",
+  "type": "docs",
+  "description": "Update the project README.md to document the new Profile Management feature including avatar upload, email change, and password change capabilities.",
+  "status": "pending",
+  "steps": [
+    "1. Add a new section to README.md (after the 'Implementation Status' section or within the feature table) documenting: (a) Profile Management feature overview. (b) Avatar Upload: supports JPG/JPEG/PNG/WEBP up to 5MB, stored as base64 in MongoDB, displayed in navbar and profile page. (c) Email Change: requires current password verification, validates format and uniqueness. (d) Password Change: enforces complexity (8+ chars, uppercase, lowercase, number, special character). (e) API endpoints: GET /api/profile, PUT /api/profile, PUT /api/profile/email, PUT /api/profile/password, POST /api/profile/avatar.",
+    "2. Update the Implementation Status table to mark 'Profile Management - avatar upload, email change, password change' as Done."
+  ],
+  "acceptance_criteria": [
+    "README.md contains documentation about the Profile Management feature",
+    "The new API endpoints are listed in the README",
+    "The Implementation Status table is updated"
+  ],
+  "verification": [
+    "Read README.md and verify the new section exists with correct information"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

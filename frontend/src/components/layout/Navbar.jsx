@@ -79,7 +79,11 @@ export default function Navbar({ onMenuClick }) {
             className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">
-              {initials}
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Avatar" className="h-8 w-8 rounded-full object-cover" />
+              ) : (
+                initials
+              )}
             </span>
             <span className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">
               {user?.role}

@@ -65,6 +65,12 @@ export function AuthProvider({ children }) {
     return updated;
   }, []);
 
+  const updateAvatar = useCallback(async (base64Data) => {
+    const updated = await authService.uploadAvatar(base64Data);
+    setUser(updated);
+    return updated;
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -75,9 +81,10 @@ export function AuthProvider({ children }) {
       register,
       logout,
       updateProfile,
+      updateAvatar,
       setUser
     }),
-    [user, loading, login, register, logout, updateProfile]
+    [user, loading, login, register, logout, updateProfile, updateAvatar]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-profile-management",
+  "task_description": "Implement complete Profile Management feature: avatar upload (base64 via JSON, no multer needed), editable email with password verification, enhanced password change with strength validation, new /api/profile backend endpoints, and updated frontend with drag-and-drop avatar upload, real-time validation, and navbar avatar display.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
