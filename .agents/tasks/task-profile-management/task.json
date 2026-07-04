@@ -10,5 +10,18 @@
     "test_quality": "skipped",
     "docker_build": "skipped",
     "summary": "Build and tests cannot be run due to INTEGRATIONS_ONLY network mode (npm registry blocked). All changes verified via manual code review - syntax, imports, patterns, and logic are consistent with existing codebase conventions."
+  },
+  "review_fixes": {
+    "status": "completed",
+    "review_file": "2025-01-15-120000-review.md",
+    "fixes_applied": [
+      "Reverted global JSON body limit from 10mb to 1mb in app.js",
+      "Added .custom() confirmPassword === newPassword validation in profile.validation.js",
+      "Added authLimiter to PUT /email and PUT /password routes in profile.routes.js",
+      "Aligned frontend password special-char regex with backend in Profile.jsx",
+      "Added trade-off comment on base64 avatar storage in auth.service.js",
+      "Added deprecation comment on PUT /api/auth/profile in auth.routes.js",
+      "Added placeholder comment on emailVerified field in user.model.js"
+    ]
   }
 }
