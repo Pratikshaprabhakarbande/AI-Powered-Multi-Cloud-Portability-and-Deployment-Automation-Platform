@@ -176,7 +176,7 @@ core modules have backend APIs, frontend UIs, tests, and documentation.
 | CI/CD — lint, tests, coverage, Docker, CodeQL, Trivy, Dependabot, GHCR deploy, Terraform | ✅ Done |
 | Production hardening — TLS (Nginx), CSRF, Redis cache, resource limits, healthchecks | ✅ Done |
 | Testing — 9 backend suites, 5 frontend, Playwright E2E scaffold, k6 load-test scaffold | ✅ Done |
-| Profile Management - avatar upload, email change, password change | ✅ Done |
+| Profile Management - enterprise settings with 2FA, sessions, activity, cloud accounts, data export | ✅ Done |
 | Remaining (Deployments UI, Kubernetes UI, Monitoring UI, Admin UI) | 🟡 Nav placeholder |
 | Live cloud SDK validation against real accounts | 🟡 Code-complete; [runbook](docs/18-live-validation-runbook.md) provided |
 
@@ -186,39 +186,123 @@ core modules have backend APIs, frontend UIs, tests, and documentation.
 
 ## Profile Management
 
-The platform includes a full-featured **Profile Management** module that allows authenticated users to manage their account details, upload avatars, change their email address, and update their password with strong security enforcement.
+The platform includes an **enterprise-grade Profile Management** module with a tabbed settings UI (similar to GitHub Settings). Authenticated users can manage their identity, security, notifications, connected cloud accounts, and privacy all from one unified interface.
 
-### Avatar Upload
+### Profile Information
 
-- Supported formats: **JPG, JPEG, PNG, WEBP**
-- Maximum file size: **5 MB**
-- Storage: Base64-encoded and persisted directly in MongoDB
-- Display: Avatar is shown in the **navigation bar** and on the **profile page**
+- **Avatar upload**: drag-and-drop or click to upload (JPG, PNG, WebP, max 5 MB); base64-encoded and stored in MongoDB
+- **Extended profile fields**: full name, organization, bio (max 500 chars), phone, country, time zone, job title
+- **Profile completion percentage**: calculated from filled fields and displayed as a progress bar
+- **Online presence indicator**: green dot (online) or grey dot (offline) based on lastSeenAt within 5 minutes
 
-### Email Change
+### Email Management
 
-- Requires **current password verification** before the email can be updated
-- Validates proper email format
-- Enforces **uniqueness** (rejects email addresses already in use by another account)
+- Change email with current password verification
+- Email format and uniqueness validation
+- Verification status badge (Verified/Unverified) with option to resend verification
 
-### Password Change
+### Security (Password)
 
-- Enforces password complexity requirements:
-  - Minimum **8 characters**
-  - At least one **uppercase** letter
-  - At least one **lowercase** letter
-  - At least one **number**
-  - At least one **special character**
+- Password change with strength indicator (8+ chars, uppercase, lowercase, number, special character)
+- Show/hide toggle on all password fields
+- Password match indicator for confirmation field
+- Changing password signs out all other sessions
 
-### API Endpoints
+### Two-Factor Authentication (2FA)
+
+- TOTP-based two-factor authentication using authenticator apps
+- QR code setup flow with manual secret entry fallback
+- 6-digit verification code confirmation
+- 10 single-use backup recovery codes displayed in a grid with "Copy all" button
+- View, regenerate, or disable 2FA (password required to disable)
+- Dynamic imports for `otpauth` and `qrcode` libraries (optional dependencies)
+
+### Active Sessions
+
+- View all logged-in devices/sessions with creation and expiry dates
+- "Current session" badge highlighting the active session
+- Revoke individual sessions or all other sessions at once
+
+### Login Activity
+
+- Paginated login history table showing date/time, IP address, browser, and success/fail status
+- Highlighted card showing most recent successful login
+- User-agent parsing for browser identification
+
+### Online Presence
+
+- Real-time online/offline status via `lastSeenAt` timestamp
+- Presence middleware updates on every authenticated request (fire-and-forget)
+- Client-side calculation: online if lastSeenAt is within 5 minutes
+
+### Notification Preferences
+
+- Granular toggle switches for: Email Notifications, Security Alerts, Deployment Notifications, Monitoring Alerts, Marketing Emails
+- Preferences persisted to the user model
+
+### Theme Preferences
+
+- Three theme options with visual cards: Light, Dark, System
+- Active theme highlighted with brand styling
+- Persisted via both localStorage and the backend profile
+
+### Connected Cloud Accounts
+
+- AWS, Azure, and GCP provider cards with status badges
+- Connect flow: enter account ID and region
+- Disconnect option for connected accounts
+- Status tracking (connected/disconnected) with connection timestamp
+
+### Security Activity Timeline
+
+- Vertical timeline UI with icons based on action type (login, password change, email change, 2FA events)
+- Paginated entries with description, timestamp, IP address, and success/fail status
+- Audit trail of all security-relevant actions
+
+### Data Export
+
+- Download complete profile data as a JSON file
+- Uses browser Blob URL and programmatic anchor click for download
+
+### Account Deletion
+
+- Multi-step confirmation flow in a modal dialog
+- Requires current password entry
+- "I understand this is irreversible" checkbox confirmation
+- Soft-deletes account (sets isActive=false, anonymizes email)
+- Revokes all tokens and logs out the user
+
+### Security Score
+
+- Calculated from: password set (+25), 2FA enabled (+25), email verified (+25), recent login within 30 days (+25)
+- Color-coded badge: red (<50), amber (50-75), green (>75)
+
+### Profile API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/profile` | Retrieve the authenticated user's profile |
-| `PUT` | `/api/profile` | Update profile fields (display name, bio, etc.) |
+| `GET` | `/api/profile` | Retrieve authenticated user's profile |
+| `PUT` | `/api/profile` | Update basic profile fields (name, organization) |
+| `PUT` | `/api/profile/extended` | Update extended fields (bio, phone, country, timezone, jobTitle) |
 | `PUT` | `/api/profile/email` | Change email (requires current password) |
 | `PUT` | `/api/profile/password` | Change password (enforces complexity rules) |
 | `POST` | `/api/profile/avatar` | Upload or replace avatar image |
+| `POST` | `/api/profile/2fa/setup` | Initialize 2FA setup (returns QR code and secret) |
+| `POST` | `/api/profile/2fa/verify` | Verify TOTP token and enable 2FA |
+| `POST` | `/api/profile/2fa/disable` | Disable 2FA (requires password) |
+| `GET` | `/api/profile/2fa/backup-codes` | Retrieve current backup codes |
+| `POST` | `/api/profile/2fa/backup-codes/regenerate` | Generate new backup codes |
+| `GET` | `/api/profile/sessions` | List all active sessions |
+| `DELETE` | `/api/profile/sessions/:id` | Revoke a specific session |
+| `DELETE` | `/api/profile/sessions` | Revoke all other sessions |
+| `GET` | `/api/profile/login-activity` | Paginated login history |
+| `GET` | `/api/profile/security-activity` | Paginated security event timeline |
+| `PUT` | `/api/profile/notifications` | Update notification preferences |
+| `GET` | `/api/profile/cloud-accounts` | List connected cloud accounts |
+| `POST` | `/api/profile/cloud-accounts` | Connect a cloud account |
+| `DELETE` | `/api/profile/cloud-accounts/:provider` | Disconnect a cloud account |
+| `GET` | `/api/profile/export` | Export profile data as JSON |
+| `DELETE` | `/api/profile/account` | Delete account (requires password) |
 
 ---
 
