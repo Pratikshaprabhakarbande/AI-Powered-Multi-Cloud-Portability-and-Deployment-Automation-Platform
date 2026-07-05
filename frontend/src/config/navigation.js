@@ -44,6 +44,7 @@ export const NAV_SECTIONS = [
     title: 'Account',
     items: [
       { label: 'Settings', to: '/settings', icon: 'cog', roles: ALL_ROLES },
+      { label: 'Cloud Credentials', to: '/cloud-credentials', icon: 'key', roles: NON_VIEWER },
       { label: 'User Management', to: '/admin/users', icon: 'users', roles: [ROLES.ADMIN] }
     ]
   }

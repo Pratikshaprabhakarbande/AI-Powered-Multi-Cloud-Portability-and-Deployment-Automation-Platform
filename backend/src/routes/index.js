@@ -16,6 +16,7 @@ import migrationRoutes from './migration.routes.js';
 import adminRoutes from './admin.routes.js';
 import deploymentsRoutes from './deployments.routes.js';
 import deployRoutes from './deploy.routes.js';
+import credentialsRoutes from './credentials.routes.js';
 
 const router = Router();
 
@@ -43,5 +44,6 @@ router.use('/migration', migrationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/deployments', deploymentsRoutes);
 router.use('/deploy', deployRoutes);
+router.use('/credentials', credentialsRoutes);
 
 export default router;

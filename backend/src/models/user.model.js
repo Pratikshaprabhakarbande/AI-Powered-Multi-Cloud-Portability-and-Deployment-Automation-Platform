@@ -50,6 +50,13 @@ const userSchema = createSchema(
       defaultProvider: { type: String, default: 'aws' },
       emailNotifications: { type: Boolean, default: true }
     },
+    // Encrypted cloud credentials (per-user, never exposed in API responses).
+    cloudCredentials: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+      private: true,
+      select: false
+    },
 
     // ---- Extended profile fields ----
     bio: { type: String, maxlength: 500, default: null },

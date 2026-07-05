@@ -3,9 +3,11 @@
  * Shows deployment form, status progression, history, and logs.
  */
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import useApi from '../hooks/useApi.js';
 import useNotification from '../hooks/useNotification.js';
 import deployService from '../services/deploy.service.js';
+import credentialsService from '../services/credentials.service.js';
 import { getErrorMessage } from '../services/api.js';
 import StatCard from '../components/ui/StatCard.jsx';
 import Badge from '../components/ui/Badge.jsx';
@@ -48,6 +50,14 @@ export default function Deploy() {
   const [polling, setPolling] = useState(false);
 
   const history = useApi(() => deployService.list({ limit: 10 }), []);
+  const [credStatus, setCredStatus] = useState(null);
+
+  // Check credential status on mount
+  useEffect(() => {
+    credentialsService.getStatus().then(setCredStatus).catch(() => {});
+  }, []);
+
+  const isLiveMode = credStatus && (credStatus.aws?.connected || credStatus.azure?.connected || credStatus.gcp?.connected);
 
   // Load regions when provider changes
   useEffect(() => {
@@ -100,10 +110,26 @@ export default function Deploy() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Deploy</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Deploy Docker containers to AWS, Azure, or GCP.</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Deploy</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Deploy Docker containers to AWS, Azure, or GCP.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${isLiveMode ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+            <span className={`h-2 w-2 rounded-full ${isLiveMode ? 'bg-green-500' : 'bg-amber-500'}`} />
+            {isLiveMode ? 'Live Mode' : 'Demo Mode'}
+          </span>
+          {!isLiveMode && <Link to="/cloud-credentials" className="text-xs text-brand-600 hover:underline">Configure credentials →</Link>}
+        </div>
       </header>
+
+      {/* Demo mode banner */}
+      {!isLiveMode && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+          <strong>Running in Demo Mode</strong> — Deployments are simulated with realistic status progression. <Link to="/cloud-credentials" className="font-medium underline">Configure cloud credentials</Link> to enable live deployments.
+        </div>
+      )}
 
       {/* Deploy form */}
       <form onSubmit={handleDeploy} className="card p-5 space-y-4">
