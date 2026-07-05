@@ -13,6 +13,7 @@ export const NAV_SECTIONS = [
     title: 'Overview',
     items: [
       { label: 'Dashboard', to: '/dashboard', icon: 'dashboard', roles: ALL_ROLES },
+      { label: 'Deploy', to: '/deploy', icon: 'rocket', roles: NON_VIEWER },
       { label: 'Deployments', to: '/deployments', icon: 'deployments', roles: ALL_ROLES }
     ]
   },

@@ -15,6 +15,7 @@ import finopsRoutes from './finops.routes.js';
 import migrationRoutes from './migration.routes.js';
 import adminRoutes from './admin.routes.js';
 import deploymentsRoutes from './deployments.routes.js';
+import deployRoutes from './deploy.routes.js';
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use('/finops', finopsRoutes);
 router.use('/migration', migrationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/deployments', deploymentsRoutes);
+router.use('/deploy', deployRoutes);
 
 export default router;
