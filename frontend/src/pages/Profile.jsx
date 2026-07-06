@@ -14,6 +14,7 @@ import AvatarUpload from '../components/ui/AvatarUpload.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import authService from '../services/auth.service.js';
 import profileService from '../services/profile.service.js';
+import credentialsService from '../services/credentials.service.js';
 
 // Password strength requirements
 const PASSWORD_REQUIREMENTS = [
@@ -34,6 +35,7 @@ const TABS = [
   { id: 'login-activity', label: 'Login Activity', icon: 'activity' },
   { id: 'notifications', label: 'Notifications', icon: 'bell' },
   { id: 'theme', label: 'Theme', icon: 'sun' },
+  { id: 'cloud-credentials', label: 'Cloud Credentials', icon: 'key' },
   { id: 'cloud-accounts', label: 'Cloud Accounts', icon: 'cloud' },
   { id: 'security-activity', label: 'Security Activity', icon: 'shield' },
   { id: 'data-privacy', label: 'Data & Privacy', icon: 'download' }
@@ -688,6 +690,135 @@ function ThemeTab({ notify }) {
   );
 }
 
+function CloudCredentialsTab({ notify }) {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  const [form, setForm] = useState({});
+
+  useEffect(() => {
+    credentialsService.getStatus().then(setStatus).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const providers = [
+    { key: 'aws', label: 'Amazon Web Services', color: 'border-l-aws', fields: [
+      { name: 'accessKeyId', label: 'Access Key ID', type: 'text', placeholder: 'AKIA...' },
+      { name: 'secretAccessKey', label: 'Secret Access Key', type: 'password', placeholder: '••••••••' },
+      { name: 'region', label: 'Default Region', type: 'text', placeholder: 'us-east-1' }
+    ]},
+    { key: 'azure', label: 'Microsoft Azure', color: 'border-l-azure', fields: [
+      { name: 'tenantId', label: 'Tenant ID', type: 'text', placeholder: '00000000-...' },
+      { name: 'clientId', label: 'Client ID', type: 'text', placeholder: '00000000-...' },
+      { name: 'clientSecret', label: 'Client Secret', type: 'password', placeholder: '••••••••' },
+      { name: 'subscriptionId', label: 'Subscription ID', type: 'text', placeholder: '00000000-...' }
+    ]},
+    { key: 'gcp', label: 'Google Cloud Platform', color: 'border-l-gcp', fields: [
+      { name: 'serviceAccountJson', label: 'Service Account JSON', type: 'textarea', placeholder: '{ "type": "service_account", ... }' },
+      { name: 'projectId', label: 'Project ID', type: 'text', placeholder: 'my-project-123' }
+    ]}
+  ];
+
+  const handleSave = async (providerKey) => {
+    try {
+      const updated = await credentialsService.save(providerKey, form);
+      setStatus(updated);
+      setExpanded(null);
+      setForm({});
+      notify.success(`${providerKey.toUpperCase()} credentials saved`);
+    } catch (err) { notify.error(getErrorMessage(err)); }
+  };
+
+  const handleTest = async (providerKey) => {
+    setTesting(providerKey);
+    try {
+      const result = await credentialsService.test(providerKey);
+      if (result.connected) notify.success(`${providerKey.toUpperCase()}: connection successful`);
+      else notify.error(`${providerKey.toUpperCase()}: ${result.error || 'connection failed'}`);
+    } catch (err) { notify.error(getErrorMessage(err)); }
+    finally { setTesting(null); }
+  };
+
+  const handleRemove = async (providerKey) => {
+    if (!window.confirm(`Remove ${providerKey.toUpperCase()} credentials?`)) return;
+    try {
+      const updated = await credentialsService.remove(providerKey);
+      setStatus(updated);
+      notify.success(`${providerKey.toUpperCase()} credentials removed`);
+    } catch (err) { notify.error(getErrorMessage(err)); }
+  };
+
+  if (loading) return <TabSkeleton />;
+
+  const anyConnected = status && (status.aws?.connected || status.azure?.connected || status.gcp?.connected);
+
+  return (
+    <div className="space-y-4 transition-opacity duration-200">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Cloud Credentials</h3>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${anyConnected ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+          <span className={`h-2 w-2 rounded-full ${anyConnected ? 'bg-green-500' : 'bg-amber-500'}`} />
+          {anyConnected ? 'Live Mode' : 'Demo Mode'}
+        </span>
+      </div>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        {anyConnected ? 'Deployments will use connected cloud providers.' : 'Running in Demo Mode. Configure credentials below to enable live deployments.'}
+      </p>
+
+      <div className="space-y-4">
+        {providers.map((p) => {
+          const connected = status?.[p.key]?.connected;
+          return (
+            <div key={p.key} className={`card border-l-4 ${p.color} p-5`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold dark:bg-slate-800">
+                    {p.key.toUpperCase().charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-white text-sm">{p.label}</p>
+                    <Badge status={connected ? 'operational' : 'outage'}>{connected ? 'Connected' : 'Not Connected'}</Badge>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {connected && (
+                    <button type="button" className="btn-secondary text-xs" onClick={() => handleTest(p.key)} disabled={testing === p.key}>
+                      {testing === p.key ? <Spinner size="sm" /> : 'Test Connection'}
+                    </button>
+                  )}
+                  <button type="button" className="btn-secondary text-xs" onClick={() => setExpanded(expanded === p.key ? null : p.key)}>
+                    {expanded === p.key ? 'Cancel' : connected ? 'Update' : 'Configure'}
+                  </button>
+                  {connected && (
+                    <button type="button" className="text-xs text-red-600 hover:underline" onClick={() => handleRemove(p.key)}>Remove</button>
+                  )}
+                </div>
+              </div>
+
+              {expanded === p.key && (
+                <div className="mt-4 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+                  {p.fields.map((f) => (
+                    <div key={f.name}>
+                      <label className="label">{f.label}</label>
+                      {f.type === 'textarea' ? (
+                        <textarea className="input h-24 font-mono text-xs" placeholder={f.placeholder} value={form[f.name] || ''} onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))} />
+                      ) : (
+                        <input type={f.type} className="input" placeholder={f.placeholder} value={form[f.name] || ''} onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))} />
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" className="btn-primary text-sm" onClick={() => handleSave(p.key)}>Save Credentials</button>
+                  <p className="text-xs text-slate-400">Credentials are encrypted (AES-256-GCM) before storage. Never exposed in API responses.</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CloudAccountsTab({ notify }) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -989,6 +1120,7 @@ export default function Profile() {
       case 'login-activity': return <LoginActivityTab notify={notify} />;
       case 'notifications': return <NotificationsTab user={user} setUser={setUser} notify={notify} />;
       case 'theme': return <ThemeTab notify={notify} />;
+      case 'cloud-credentials': return <CloudCredentialsTab notify={notify} />;
       case 'cloud-accounts': return <CloudAccountsTab notify={notify} />;
       case 'security-activity': return <SecurityActivityTab notify={notify} />;
       case 'data-privacy': return <DataPrivacyTab notify={notify} logout={logout} />;
