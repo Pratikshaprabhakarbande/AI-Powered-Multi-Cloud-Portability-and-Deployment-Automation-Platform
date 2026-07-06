@@ -27,6 +27,8 @@ import FinOps from './pages/FinOps.jsx';
 import Migration from './pages/Migration.jsx';
 import Deployments from './pages/Deployments.jsx';
 import DeploymentDetail from './pages/DeploymentDetail.jsx';
+import Deploy from './pages/Deploy.jsx';
+import CloudCredentials from './pages/CloudCredentials.jsx';
 import Monitoring from './pages/Monitoring.jsx';
 import Kubernetes from './pages/Kubernetes.jsx';
 import AdminUsers from './pages/AdminUsers.jsx';
@@ -62,6 +64,8 @@ export default function App() {
           {/* All roles */}
           <Route path="/deployments" element={<Deployments />} />
           <Route path="/deployments/:id" element={<DeploymentDetail />} />
+          <Route path="/deploy" element={<ProtectedRoute roles={NON_VIEWER}><Deploy /></ProtectedRoute>} />
+          <Route path="/cloud-credentials" element={<ProtectedRoute roles={NON_VIEWER}><CloudCredentials /></ProtectedRoute>} />
           <Route path="/monitoring" element={<Monitoring />} />
           <Route path="/security" element={<Security />} />
           <Route path="/compliance" element={<Compliance />} />

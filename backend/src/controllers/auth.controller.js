@@ -89,6 +89,21 @@ export const resetPassword = asyncHandler(async (req, res) => {
   return sendSuccess(res, { message: 'Password has been reset. Please log in again.' });
 });
 
+export const changeEmail = asyncHandler(async (req, res) => {
+  const user = await authService.changeEmail(req.user.id, req.body, reqContext(req));
+  return sendSuccess(res, { message: 'Email updated successfully', data: { user } });
+});
+
+export const changePassword = asyncHandler(async (req, res) => {
+  const user = await authService.changePassword(req.user.id, req.body, reqContext(req));
+  return sendSuccess(res, { message: 'Password changed successfully', data: { user } });
+});
+
+export const uploadAvatar = asyncHandler(async (req, res) => {
+  const user = await authService.uploadAvatar(req.user.id, req.body.avatar, reqContext(req));
+  return sendSuccess(res, { message: 'Avatar uploaded successfully', data: { user } });
+});
+
 export default {
   register,
   login,
@@ -96,6 +111,9 @@ export default {
   refreshToken,
   getProfile,
   updateProfile,
+  changeEmail,
+  changePassword,
+  uploadAvatar,
   forgotPassword,
   resetPassword
 };

@@ -155,7 +155,10 @@ export const AUDIT_ACTIONS = Object.freeze({
   LOGOUT: 'logout',
   DEPLOY: 'deploy',
   ROLLBACK: 'rollback',
-  SCAN: 'scan'
+  SCAN: 'scan',
+  ENABLE_2FA: 'enable_2fa',
+  DISABLE_2FA: 'disable_2fa',
+  SESSION_REVOKED: 'session_revoked'
 });
 export const AUDIT_ACTION_VALUES = Object.values(AUDIT_ACTIONS);
 

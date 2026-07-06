@@ -3,7 +3,6 @@
  * Validates env, connects to MongoDB, then starts the HTTP server.
  * Handles graceful shutdown and fatal error safety nets.
  */
-import 'dotenv/config';
 import app from './app.js';
 import env, { validateEnv } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';

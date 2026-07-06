@@ -1,0 +1,45 @@
+# Render Blueprint — defines both services so they deploy correctly.
+# Import this via Render Dashboard → New → Blueprint → connect this repo.
+# After import, set the secret env vars (MONGO_URI, JWT_SECRET, etc.) manually.
+
+services:
+  # ---- Backend API ----
+  - type: web
+    name: cloud-portability-backend
+    runtime: node
+    region: oregon
+    plan: free
+    # CRITICAL: Root Directory must be 'backend' so npm install + start work.
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      # These MUST be set manually in the Render dashboard (secrets):
+      # - MONGO_URI
+      # - JWT_SECRET
+      # - JWT_REFRESH_SECRET
+      # - CORS_ORIGIN (set to the frontend URL, e.g. https://cloud-portability-frontend.onrender.com)
+
+  # ---- Frontend (Static Site) ----
+  - type: web
+    name: cloud-portability-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    # SPA: all routes serve index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # MUST be set before build (Vite bakes it in at build time):
+      - key: VITE_API_BASE_URL
+        value: https://cloud-portability-backend.onrender.com/api

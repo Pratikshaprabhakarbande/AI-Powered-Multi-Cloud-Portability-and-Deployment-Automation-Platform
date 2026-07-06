@@ -1,10 +1,25 @@
 /**
  * Centralized, validated environment configuration.
  *
- * Reads from process.env (populated by dotenv in index.js) and exposes a typed,
+ * Reads from process.env (populated by dotenv) and exposes a typed,
  * frozen config object. Fails fast in production if required secrets are missing.
  */
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+// Load .env from the backend root directory (where package.json lives),
+// regardless of the current working directory when Node is started.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = resolve(__dirname, '../../.env');
+const dotenvResult = dotenv.config({ path: envPath });
+
+if (dotenvResult.error) {
+  // Only warn in non-production (production uses injected env vars, no .env file)
+  if (process.env.NODE_ENV !== 'production') {
+    process.stderr.write(`[env] warning: ${envPath} not found (using environment variables)\n`);
+  }
+}
 
 const toBool = (v, fallback = false) =>
   v === undefined ? fallback : ['1', 'true', 'yes', 'on'].includes(String(v).toLowerCase());

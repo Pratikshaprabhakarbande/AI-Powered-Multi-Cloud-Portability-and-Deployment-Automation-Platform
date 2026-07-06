@@ -44,7 +44,17 @@ export const logoutValidation = [
 export const updateProfileValidation = [
   body('name').optional().trim().isLength({ min: 2, max: 80 }),
   body('organization').optional().trim().isLength({ max: 120 }),
-  body('avatarUrl').optional().isURL().withMessage('avatarUrl must be a valid URL'),
+  body('avatarUrl').optional().custom((value) => {
+    // Allow both standard URLs and base64 data URLs
+    if (value.startsWith('data:image/')) return true;
+    // Basic URL validation for non-data URLs
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      throw new Error('avatarUrl must be a valid URL or a base64 data URL');
+    }
+  }),
   body('preferences.theme').optional().isIn(['light', 'dark', 'system']),
   body('preferences.defaultProvider').optional().isIn(['aws', 'azure', 'gcp']),
   body('preferences.emailNotifications').optional().isBoolean(),

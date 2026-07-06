@@ -1,0 +1,21 @@
+{
+  "id": "FEAT-003",
+  "type": "docs",
+  "description": "Update README.md with comprehensive Profile Management documentation covering all enterprise features: 2FA, sessions, login activity, notification preferences, connected accounts, security activity, data export, account deletion, and the new API endpoints.",
+  "status": "completed",
+  "steps": [
+    "1. Update README.md: Find the existing 'Profile Management' section (added by the previous task). Replace/extend it with a comprehensive section covering: (a) Feature overview - enterprise-grade profile management with tabbed settings UI. (b) Profile Information: avatar upload, name, bio, phone, country, timezone, job title, organization. (c) Email Management: email change with password verification, verification status badge. (d) Security: password change with strength validation, show/hide toggle. (e) Two-Factor Authentication: TOTP-based 2FA with QR code setup, backup recovery codes, enable/disable flow. (f) Active Sessions: view all logged-in devices, revoke individual or all sessions. (g) Login Activity: login history with IP, browser, status. (h) Online Presence: real-time online/offline status via lastSeenAt. (i) Notification Preferences: granular notification controls. (j) Theme Preferences: light/dark/system with persistence. (k) Connected Cloud Accounts: AWS/Azure/GCP connection management. (l) Security Activity Timeline: audit trail of security events. (m) Data Export: download profile as JSON. (n) Account Deletion: secure multi-step deletion flow.",
+    "2. Add a new 'Profile API Endpoints' subsection listing all endpoints: GET /api/profile, PUT /api/profile, PUT /api/profile/extended, PUT /api/profile/email, PUT /api/profile/password, POST /api/profile/avatar, POST /api/profile/2fa/setup, POST /api/profile/2fa/verify, POST /api/profile/2fa/disable, GET /api/profile/2fa/backup-codes, POST /api/profile/2fa/backup-codes/regenerate, GET /api/profile/sessions, DELETE /api/profile/sessions/:id, DELETE /api/profile/sessions, GET /api/profile/login-activity, GET /api/profile/security-activity, PUT /api/profile/notifications, GET /api/profile/cloud-accounts, POST /api/profile/cloud-accounts, DELETE /api/profile/cloud-accounts/:provider, GET /api/profile/export, DELETE /api/profile/account.",
+    "3. Update the Implementation Status table to reflect enterprise profile management as Done with all sub-features listed."
+  ],
+  "acceptance_criteria": [
+    "README.md has comprehensive Profile Management documentation covering all 14 feature areas",
+    "All 22 API endpoints are listed with their HTTP methods and paths",
+    "Implementation Status table is updated"
+  ],
+  "verification": [
+    "Read README.md and verify the new documentation is present and accurate"
+  ],
+  "blocked_reason": null,
+  "findings": "README.md updated with all 14 profile feature sections and 22 API endpoints. Documentation-only change, no build/test required."
+}

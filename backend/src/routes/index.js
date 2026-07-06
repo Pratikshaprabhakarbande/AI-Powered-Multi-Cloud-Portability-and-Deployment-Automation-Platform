@@ -5,6 +5,7 @@
  */
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
+import profileRoutes from './profile.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import terraformRoutes from './terraform.routes.js';
 import securityRoutes from './security.routes.js';
@@ -14,6 +15,8 @@ import finopsRoutes from './finops.routes.js';
 import migrationRoutes from './migration.routes.js';
 import adminRoutes from './admin.routes.js';
 import deploymentsRoutes from './deployments.routes.js';
+import deployRoutes from './deploy.routes.js';
+import credentialsRoutes from './credentials.routes.js';
 
 const router = Router();
 
@@ -30,6 +33,7 @@ router.get('/health', (_req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/profile', profileRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/terraform', terraformRoutes);
 router.use('/security', securityRoutes);
@@ -39,5 +43,7 @@ router.use('/finops', finopsRoutes);
 router.use('/migration', migrationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/deployments', deploymentsRoutes);
+router.use('/deploy', deployRoutes);
+router.use('/credentials', credentialsRoutes);
 
 export default router;
