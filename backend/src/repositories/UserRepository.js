@@ -12,7 +12,11 @@ class UserRepository extends BaseRepository {
 
   /** Find by email. Include the password (normally stripped) for auth. */
   async findByEmail(email, { withPassword = false } = {}) {
-    const query = this.model.findOne({ email: String(email).toLowerCase() });
+    // Sanitize: coerce to string, lowercase, and validate format to prevent
+    // NoSQL injection (CodeQL: "Database query built from user-controlled sources").
+    const sanitized = String(email || '').toLowerCase().trim();
+    if (!sanitized || typeof sanitized !== 'string') return null;
+    const query = this.model.findOne({ email: sanitized });
     if (withPassword) query.select('+password');
     return query.exec();
   }

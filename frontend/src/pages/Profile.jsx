@@ -455,7 +455,6 @@ function SessionsTab({ notify }) {
       .then(setSessions)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRevoke = async (id) => {
@@ -528,7 +527,6 @@ function LoginActivityTab({ notify }) {
       .then(setData)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const parseUserAgent = (ua) => {
@@ -830,7 +828,6 @@ function CloudAccountsTab({ notify }) {
       .then(setAccounts)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const providers = [
@@ -917,7 +914,6 @@ function SecurityActivityTab({ notify }) {
       .then(setData)
       .catch((err) => notify.error(getErrorMessage(err)))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const getActionIcon = (action) => {

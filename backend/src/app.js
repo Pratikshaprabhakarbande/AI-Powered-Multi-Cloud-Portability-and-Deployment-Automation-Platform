@@ -58,22 +58,6 @@ app.get('/api/health', (_req, res) => {
 // Global API rate limit + CSRF (no-op unless cookie auth enabled) + routes
 app.use(env.apiPrefix, apiLimiter, csrfProtection, routes);
 
-// DEBUG: Print all registered routes under /api on startup.
-// Remove this block once the /api/deploy 404 is resolved.
-function printRoutes(stack, prefix = '') {
-  for (const layer of stack) {
-    if (layer.route) {
-      const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
-      console.log(`  ${methods} ${prefix}${layer.route.path}`);
-    } else if (layer.name === 'router' && layer.handle?.stack) {
-      const routerPath = layer.regexp?.source?.replace('\\/?(?=\\/|$)', '').replace(/\\\//g, '/').replace(/\^/g, '').replace(/\$/g, '') || '';
-      printRoutes(layer.handle.stack, prefix + routerPath);
-    }
-  }
-}
-console.log('[debug] Registered routes under /api:');
-printRoutes(routes.stack, '/api');
-
 // 404 + error handling (order matters: convert before final handler)
 app.use(notFound);
 app.use(errorConverter);

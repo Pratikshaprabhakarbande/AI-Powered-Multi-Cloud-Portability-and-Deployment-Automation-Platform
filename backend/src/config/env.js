@@ -15,17 +15,10 @@ const envPath = resolve(__dirname, '../../.env');
 const dotenvResult = dotenv.config({ path: envPath });
 
 if (dotenvResult.error) {
-  console.warn(`[env] dotenv failed to load ${envPath}: ${dotenvResult.error.message}`);
-} else {
-  console.log(`[env] loaded ${envPath} (${Object.keys(dotenvResult.parsed || {}).length} vars)`);
-}
-
-// Debug: confirm MONGO_URI was loaded (redact password for safety).
-if (process.env.MONGO_URI) {
-  const display = process.env.MONGO_URI.replace(/:([^@]+)@/, ':***@');
-  console.log(`[env] MONGO_URI = ${display}`);
-} else {
-  console.warn('[env] MONGO_URI is NOT set — will fall back to localhost:27017');
+  // Only warn in non-production (production uses injected env vars, no .env file)
+  if (process.env.NODE_ENV !== 'production') {
+    process.stderr.write(`[env] warning: ${envPath} not found (using environment variables)\n`);
+  }
 }
 
 const toBool = (v, fallback = false) =>

@@ -175,7 +175,7 @@ export default function CloudCredentials() {
         <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
           <li>• Credentials are encrypted with AES-256-GCM before storage</li>
           <li>• Raw secrets are never returned in API responses</li>
-          <li>• Each user's credentials are isolated (per-user encryption)</li>
+          <li>• Each user&apos;s credentials are isolated (per-user encryption)</li>
           <li>• Test Connection uses read-only API calls (no resources created)</li>
         </ul>
       </div>

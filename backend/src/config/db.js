@@ -39,7 +39,6 @@ export async function connectDB({ retries = 5, delayMs = 2000 } = {}) {
   while (true) {
     try {
       attempt += 1;
-      logger.info(`[db] connecting to: ${env.db.uri.replace(/:([^@]+)@/, ':***@')}`);
       await mongoose.connect(env.db.uri, env.db.options);
       return mongoose;
     } catch (err) {
