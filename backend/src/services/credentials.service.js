@@ -1,13 +1,16 @@
 /**
  * Cloud Credentials service.
  * Encrypts credentials before storing, never exposes raw secrets in responses.
- * Provides connection testing per provider.
+ * Delegates validation to per-provider services.
  */
 import crypto from 'node:crypto';
 import { User } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import logger from '../utils/logger.js';
 import env from '../config/env.js';
+import { validateAws } from './awsCredentialService.js';
+import { validateAzure } from './azureCredentialService.js';
+import { validateGcp } from './gcpCredentialService.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const KEY = crypto.scryptSync(env.jwt.secret || 'fallback-key', 'cloud-creds-salt', 32);
@@ -22,7 +25,7 @@ function encrypt(text) {
   return `${iv.toString('hex')}:${tag}:${encrypted}`;
 }
 
-function decrypt(encoded) {
+export function decrypt(encoded) {
   if (!encoded) return null;
   try {
     const [ivHex, tagHex, data] = encoded.split(':');
@@ -61,26 +64,25 @@ export async function saveCredentials(userId, provider, credentials) {
       throw ApiError.badRequest('AWS Access Key ID and Secret Access Key are required');
     }
     user.cloudCredentials.aws = {
-      accessKeyId: encrypt(credentials.accessKeyId),
-      secretAccessKey: encrypt(credentials.secretAccessKey),
-      region: credentials.region || 'us-east-1'
+      accessKeyId: encrypt(credentials.accessKeyId.trim()),
+      secretAccessKey: encrypt(credentials.secretAccessKey.trim()),
+      region: (credentials.region || 'us-east-1').trim()
     };
   } else if (provider === 'azure') {
     if (!credentials.clientId || !credentials.clientSecret || !credentials.tenantId) {
       throw ApiError.badRequest('Azure Client ID, Secret, and Tenant ID are required');
     }
     user.cloudCredentials.azure = {
-      clientId: encrypt(credentials.clientId),
-      clientSecret: encrypt(credentials.clientSecret),
-      tenantId: encrypt(credentials.tenantId),
-      subscriptionId: encrypt(credentials.subscriptionId || ''),
-      region: credentials.region || 'eastus'
+      clientId: encrypt(credentials.clientId.trim()),
+      clientSecret: encrypt(credentials.clientSecret.trim()),
+      tenantId: encrypt(credentials.tenantId.trim()),
+      subscriptionId: encrypt((credentials.subscriptionId || '').trim()),
+      region: (credentials.region || 'eastus').trim()
     };
   } else if (provider === 'gcp') {
     if (!credentials.serviceAccountJson) {
       throw ApiError.badRequest('GCP Service Account JSON is required');
     }
-    // Validate it's parseable JSON
     try { JSON.parse(credentials.serviceAccountJson); } catch {
       throw ApiError.badRequest('Service Account JSON is not valid JSON');
     }
@@ -110,45 +112,34 @@ export async function removeCredentials(userId, provider) {
   return getStatus(userId);
 }
 
-/** Test connection for a provider (attempts a simple read-only API call). */
+/** Test connection for a provider — delegates to per-provider services. */
 export async function testConnection(userId, provider) {
   const user = await User.findById(userId).select('+cloudCredentials').lean();
   const creds = user?.cloudCredentials?.[provider];
   if (!creds) throw ApiError.badRequest(`No ${provider} credentials configured`);
 
-  try {
-    if (provider === 'aws') {
-      const { STSClient, GetCallerIdentityCommand } = await import('@aws-sdk/client-sts');
-      const client = new STSClient({
-        region: creds.region || 'us-east-1',
-        credentials: {
-          accessKeyId: decrypt(creds.accessKeyId),
-          secretAccessKey: decrypt(creds.secretAccessKey)
-        }
-      });
-      const result = await client.send(new GetCallerIdentityCommand({}));
-      return { connected: true, accountId: result.Account, arn: result.Arn };
-    } else if (provider === 'azure') {
-      const { ClientSecretCredential } = await import('@azure/identity');
-      const cred = new ClientSecretCredential(
-        decrypt(creds.tenantId), decrypt(creds.clientId), decrypt(creds.clientSecret)
-      );
-      const token = await cred.getToken('https://management.azure.com/.default');
-      return { connected: true, tokenExpiry: token.expiresOnTimestamp };
-    } else if (provider === 'gcp') {
-      const { GoogleAuth } = await import('google-auth-library');
-      const saJson = JSON.parse(decrypt(creds.serviceAccountJson));
-      const auth = new GoogleAuth({ credentials: saJson, scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-      const client = await auth.getClient();
-      const token = await client.getAccessToken();
-      return { connected: true, projectId: saJson.project_id, hasToken: Boolean(token) };
-    }
-    throw ApiError.badRequest('Invalid provider');
-  } catch (err) {
-    if (err.statusCode) throw err;
-    logger.warn(`[credentials] ${provider} test failed: ${err.message}`);
-    return { connected: false, error: err.message };
+  logger.info(`[credentials] testing ${provider} connection for user ${userId}`);
+
+  if (provider === 'aws') {
+    return validateAws({
+      accessKeyId: decrypt(creds.accessKeyId),
+      secretAccessKey: decrypt(creds.secretAccessKey),
+      region: creds.region || 'us-east-1'
+    });
+  } else if (provider === 'azure') {
+    return validateAzure({
+      clientId: decrypt(creds.clientId),
+      clientSecret: decrypt(creds.clientSecret),
+      tenantId: decrypt(creds.tenantId),
+      subscriptionId: decrypt(creds.subscriptionId)
+    });
+  } else if (provider === 'gcp') {
+    return validateGcp({
+      serviceAccountJson: decrypt(creds.serviceAccountJson),
+      projectId: creds.projectId
+    });
   }
+  throw ApiError.badRequest('Invalid provider');
 }
 
 export default { getStatus, saveCredentials, removeCredentials, testConnection };
