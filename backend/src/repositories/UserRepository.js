@@ -34,7 +34,16 @@ class UserRepository extends BaseRepository {
   }
 
   async updateAvatar(userId, avatarData) {
-    return this.model.findByIdAndUpdate(userId, { avatarUrl: avatarData }, { new: true });
+    // Validate: must be a string, either a data:image URL or an https URL, max 2MB base64.
+    if (!avatarData || typeof avatarData !== 'string') return null;
+    const trimmed = avatarData.trim();
+    // Only allow data:image URIs or https URLs — reject anything else (prevents Mongo operator injection).
+    const isDataUri = /^data:image\/(jpeg|jpg|png|webp|gif);base64,/.test(trimmed);
+    const isHttpsUrl = /^https:\/\//.test(trimmed);
+    if (!isDataUri && !isHttpsUrl) return null;
+    // Limit size (base64 images can be large but cap at ~2MB encoded).
+    if (trimmed.length > 2 * 1024 * 1024) return null;
+    return this.model.findByIdAndUpdate(userId, { avatarUrl: trimmed }, { new: true });
   }
 }
 
