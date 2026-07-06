@@ -20,6 +20,14 @@ import credentialsRoutes from './credentials.routes.js';
 
 const router = Router();
 
+// Log registered routers at startup for debugging route-not-found issues.
+const ROUTERS = [
+  'auth', 'profile', 'dashboard', 'terraform', 'security',
+  'ai', 'compliance', 'finops', 'migration', 'admin',
+  'deployments', 'deploy', 'credentials'
+];
+console.log(`[routes] ${ROUTERS.length} routers loaded: ${ROUTERS.join(', ')}`);
+
 router.get('/health', (_req, res) => {
   res.status(200).json({
     success: true,
