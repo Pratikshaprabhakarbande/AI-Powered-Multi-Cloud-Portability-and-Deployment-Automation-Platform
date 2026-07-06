@@ -49,7 +49,7 @@ export default function Deploy() {
   const [activeDeployment, setActiveDeployment] = useState(null);
   const [polling, setPolling] = useState(false);
 
-  const history = useApi(() => deployService.list({ limit: 10 }), []);
+  const history = useApi(() => deployService.list({ limit: 10 }), [activeDeployment?.status]);
   const [credStatus, setCredStatus] = useState(null);
 
   // Check credential status on mount
