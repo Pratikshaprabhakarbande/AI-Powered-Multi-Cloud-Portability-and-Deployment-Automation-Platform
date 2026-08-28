@@ -50,7 +50,7 @@ jobs:
       GOOGLE_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS_JSON }}
       TF_VAR_environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
